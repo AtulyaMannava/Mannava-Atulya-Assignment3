@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/vega@5.22.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.2.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.20.8"></script>
+</head>
+<body>
+  <div id="vis"/>
+  <script>
+    const spec = {
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "A scatterplot showing trees in champaign",
+  "data": {
+    "url": "https://gis-cityofchampaign.opendata.arcgis.com/datasets/979bbeefffea408e8f1cb7a397196c64_22.csv"
+  },
+  "vconcat": [
+    {
+      "hconcat": [
+        {
+          "title": "Pan and Zoom",
+          "params": [{"name": "grid", "select": "interval", "bind": "scales"}],
+          "mark": "circle",
+          "encoding": {
+            "x": {
+              "field": "X",
+              "type": "quantitative",
+              "scale": {"zero": false}
+            },
+            "y": {
+              "field": "Y",
+              "type": "quantitative",
+              "scale": {"zero": false}
+            },
+            "color": {
+              "field": "TREETYPE",
+              "type": "ordinal",
+              "scale": {"scheme": "redyellowgreen"}
+            },
+            "shape": {"field": "TREETYPE", "type": "ordinal"}
+          }
+        },
+        {
+          "title": "Single Selection",
+          "params": [{"name": "pts", "select": "point"}],
+          "mark": {"type": "circle", "tooltip": true},
+          "encoding": {
+            "x": {
+              "field": "X",
+              "type": "quantitative",
+              "scale": {"zero": false}
+            },
+            "y": {
+              "field": "Y",
+              "type": "quantitative",
+              "scale": {"zero": false}
+            },
+            "color": {
+              "condition": {
+                "param": "pts",
+                "field": "TREETYPE",
+                "type": "nominal",
+                "scale": {"scheme": "redyellowgreen"}
+              },
+              "value": "grey"
+            },
+            "size": {
+              "condition": {"param": "pts", "empty": false, "value": 200},
+              "value": 50
+            }
+          }
+        }
+      ]
+    },
+    {
+      "description": "Drag a rectangular brush to show (first 20) selected points in a table.",
+      "title": "Brush Selection",
+      "data": {
+        "url": "https://gis-cityofchampaign.opendata.arcgis.com/datasets/979bbeefffea408e8f1cb7a397196c64_22.csv"
+      },
+      "transform": [{"window": [{"op": "row_number", "as": "row_number"}]}],
+      "hconcat": [
+        {
+          "params": [{"name": "brush", "select": "interval"}],
+          "mark": "point",
+          "encoding": {
+            "x": {
+              "field": "X",
+              "type": "quantitative",
+              "scale": {"zero": false}
+            },
+            "y": {
+              "field": "Y",
+              "type": "quantitative",
+              "scale": {"zero": false}
+            },
+            "color": {
+              "condition": {
+                "selection": "brush",
+                "field": "TREETYPE",
+                "type": "nominal"
+              },
+              "value": "grey"
+            }
+          }
+        },
+        {
+          "transform": [
+            {"filter": {"param": "brush"}},
+            {"window": [{"op": "rank", "as": "rank"}]},
+            {"filter": {"field": "rank", "lt": 20}}
+          ],
+          "hconcat": [
+            {
+              "width": 100,
+              "title": "X",
+              "mark": "text",
+              "encoding": {
+                "text": {"field": "X", "type": "nominal"},
+                "y": {"field": "row_number", "type": "ordinal", "axis": null}
+              }
+            },
+            {
+              "width": 100,
+              "title": "Y",
+              "mark": "text",
+              "encoding": {
+                "text": {"field": "Y", "type": "nominal"},
+                "y": {"field": "row_number", "type": "ordinal", "axis": null}
+              }
+            },
+            {
+              "width": 100,
+              "title": "TREETYPE",
+              "mark": "text",
+              "encoding": {
+                "text": {"field": "TREETYPE", "type": "nominal"},
+                "y": {"field": "row_number", "type": "ordinal", "axis": null}
+              }
+            }
+          ]
+        }
+      ],
+      "resolve": {"legend": {"color": "independent"}}
+    },
+    {
+      "title": "CHAMPAIGN TREES",
+      "data": {
+        "url": "https://gis-cityofchampaign.opendata.arcgis.com/datasets/979bbeefffea408e8f1cb7a397196c64_22.csv"
+      },
+      "vconcat": [
+        {
+          "encoding": {
+            "color": {
+              "condition": {
+                "param": "brush",
+                "field": "TREETYPE",
+                "type": "nominal",
+                "scale": {"scheme": "redyellowgreen"}
+              },
+              "value": "grey"
+            },
+            "size": {
+              "condition": {"param": "brush", "empty": false, "value": 200},
+              "value": 50
+            },
+            "x": {
+              "field": "X",
+              "type": "quantitative",
+              "scale": {"zero": false}
+            },
+            "y": {
+              "field": "Y",
+              "type": "quantitative",
+              "scale": {"zero": false}
+            }
+          },
+          "width": 600,
+          "height": 300,
+          "mark": "point",
+          "params": [
+            {
+              "name": "brush",
+              "select": {"type": "interval", "encodings": ["x"]}
+            }
+          ],
+          "transform": [{"filter": {"param": "click"}}]
+        },
+        {
+          "encoding": {
+            "color": {
+              "condition": {
+                "param": "click",
+                "field": "TREETYPE",
+                "type": "nominal",
+                "scale": {"scheme": "redyellowgreen"}
+              },
+              "value": "lightgray"
+            },
+            "x": {"aggregate": "count"},
+            "y": {"title": "TREETYPE", "field": "TREETYPE"}
+          },
+          "width": 600,
+          "mark": "bar",
+          "params": [
+            {
+              "name": "click",
+              "select": {"type": "point", "encodings": ["color"]}
+            }
+          ],
+          "transform": [{"filter": {"param": "brush"}}]
+        }
+      ]
+    },
+    {
+      "description": "A scatterplot showing Traffic Signal Intersections in Champaign",
+      "data": {
+        "url": "https://gis-cityofchampaign.opendata.arcgis.com/datasets/cityofchampaign::traffic-signal-intersections.csv",
+        "format": {"type": "csv"}
+      },
+      "title": "Traffic Signal Intersections in Champaign",
+      "params": [{"name": "pts", "select": "point"}],
+      "mark": {"type": "circle", "tooltip": true},
+      "encoding": {
+        "x": {"field": "X", "type": "quantitative", "scale": {"zero": false}},
+        "y": {"field": "Y", "type": "quantitative", "scale": {"zero": false}}
+      }
+    }
+  ],
+  "config": {"view": {"width": 400, "height": 400}}
+};
+    vegaEmbed("#vis", spec, {mode: "vega-lite"}).then(console.log).catch(console.warn);
+  </script>
+</body>
+</html>
